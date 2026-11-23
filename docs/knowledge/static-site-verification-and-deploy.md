@@ -1,6 +1,6 @@
 # 静态站自测与部署顺序
 
-本站是纯 HTML/CSS、无构建、无脚本的静态站。本地验收与 GitHub Pages 部署的稳定做法如下。
+本站是纯 HTML/CSS、无构建的静态站；仅有的脚本是两个跳转页（站点根 `/`、应用根 `/flashnote/`）里的一段内联语言探测脚本（读 localStorage 记忆 + 浏览器语言后 `location.replace`），无任何构建步骤、框架与外部依赖。本地验收与 GitHub Pages 部署的稳定做法如下。
 
 ## 本地全量资源自测
 
@@ -18,6 +18,11 @@
 - **症状**（顺序错）：Pages 开通请求被 GitHub 拒绝（提示 main 分支不存在）；或子目录残留 `CNAME` / `.nojekyll` 导致域名识别与构建行为异常。
 - **原因**：Pages 的 "Deploy from a branch" 要求所选分支已存在；`CNAME` 与 `.nojekyll` 只在站点根生效。同理，仓库的默认分支在 GitHub 上不可删除，删除旧交付分支前须先把默认分支切到 `main`。
 - **做法**（固定顺序）：交付分支通过验收 → 合并出 `main` 并推送 → 仓库 Settings → Pages 选 main / root 并 Enforce HTTPS → 配 DNS（自定义域名 CNAME 指向 `<user>.github.io`）→ 发布后补验线上可达与首页卡片入口。合并前无法验证线上，以本地等价自测先行。
+
+## 语言跳转页自测口径
+
+- **场景**：改动跳转页脚本、语言目录（`zh-CN/` / `en-US/`）或语言互切链接后的本地验收。
+- **做法**：本地 `http.server` 下验证四类行为——① 根路径页按浏览器语言落地（`zh` 开头 → `zh-CN/`，其余 → `en-US/`），脚本逻辑与页面嵌入内容一致；② 语言互切后 localStorage 写入 `hapaul-lang`（站点级一份，站点根与应用根共用），再次访问任一跳转页优先落记忆语言；③ 内容页之间互切不发生探测（无弹回循环）；④ 禁 JS 时跳转页呈现中文 / English 两个手动入口且均可达。自动化验证可把跳转页内联脚本原样抽出，在 Node 里 mock `navigator.languages` / `localStorage` / `location.replace` 逐用例断言。
 
 ## 首页卡片登记口径
 
