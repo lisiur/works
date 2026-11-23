@@ -1,0 +1,7 @@
+# 运行时脚手架：工作区管理文件，不入库、不发布
+.multica/
+.opencode/
+AGENTS.md
+
+# 系统文件
+.DS_Store
