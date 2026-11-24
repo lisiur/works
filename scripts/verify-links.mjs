@@ -85,20 +85,20 @@ try {
     'zh-CN/index.html',
     'en-US/index.html',
     'flashnote/index.html',
-    'flashnote/zh-CN/index.html',
-    'flashnote/zh-CN/privacy.html',
-    'flashnote/zh-CN/support.html',
-    'flashnote/en-US/index.html',
-    'flashnote/en-US/privacy.html',
-    'flashnote/en-US/support.html',
+    'zh-CN/flashnote/index.html',
+    'zh-CN/flashnote/privacy.html',
+    'zh-CN/flashnote/support.html',
+    'en-US/flashnote/index.html',
+    'en-US/flashnote/privacy.html',
+    'en-US/flashnote/support.html',
   ]);
   check('AC1: HTML 路径与 10 个页面一一对应', htmlFiles.every((f) => expected.has(f)) && htmlFiles.length === expected.size);
 
-  // ── AC1: 12 种地址全部 200 ──
+  // ── AC1: 12 种地址全部 200（locale 前置全局路径，ISSUE-124 验收反馈定版）──
   const addresses = [
     '/', '/zh-CN/', '/en-US/', '/flashnote/',
-    '/flashnote/zh-CN/', '/flashnote/zh-CN/index.html', '/flashnote/zh-CN/privacy.html', '/flashnote/zh-CN/support.html',
-    '/flashnote/en-US/', '/flashnote/en-US/index.html', '/flashnote/en-US/privacy.html', '/flashnote/en-US/support.html',
+    '/zh-CN/flashnote/', '/zh-CN/flashnote/index.html', '/zh-CN/flashnote/privacy.html', '/zh-CN/flashnote/support.html',
+    '/en-US/flashnote/', '/en-US/flashnote/index.html', '/en-US/flashnote/privacy.html', '/en-US/flashnote/support.html',
   ];
   for (const addr of addresses) {
     try {
@@ -109,8 +109,14 @@ try {
     }
   }
 
-  // ── AC1: ISSUE-119 下线的旧地址仍 404（含本次随构建体系消失的旧样式路径）──
-  const gone = ['/en/', '/en/index.html', '/flashnote/en/', '/flashnote/en/privacy.html', '/zh/', '/styles.css', '/flashnote/styles.css'];
+  // ── AC1: 已下线旧地址仍 404（ISSUE-119 集合 + 重构前旧样式路径 + locale 前置改版前的
+  // /<app>/<locale>/ 旧页面地址 —— 验收拍板「无须兼容」，一律 404 不做兼容跳转）──
+  const gone = [
+    '/en/', '/en/index.html', '/flashnote/en/', '/flashnote/en/privacy.html', '/zh/',
+    '/styles.css', '/flashnote/styles.css',
+    '/flashnote/zh-CN/', '/flashnote/zh-CN/index.html', '/flashnote/zh-CN/privacy.html', '/flashnote/zh-CN/support.html',
+    '/flashnote/en-US/', '/flashnote/en-US/index.html', '/flashnote/en-US/privacy.html', '/flashnote/en-US/support.html',
+  ];
   for (const addr of gone) {
     try {
       const res = await fetch(addr);
@@ -126,12 +132,12 @@ try {
     ['/zh-CN/', 'zh-CN/index.html'],
     ['/en-US/', 'en-US/index.html'],
     ['/flashnote/', 'flashnote/index.html'],
-    ['/flashnote/zh-CN/', 'flashnote/zh-CN/index.html'],
-    ['/flashnote/zh-CN/privacy.html', 'flashnote/zh-CN/privacy.html'],
-    ['/flashnote/zh-CN/support.html', 'flashnote/zh-CN/support.html'],
-    ['/flashnote/en-US/', 'flashnote/en-US/index.html'],
-    ['/flashnote/en-US/privacy.html', 'flashnote/en-US/privacy.html'],
-    ['/flashnote/en-US/support.html', 'flashnote/en-US/support.html'],
+    ['/zh-CN/flashnote/', 'zh-CN/flashnote/index.html'],
+    ['/zh-CN/flashnote/privacy.html', 'zh-CN/flashnote/privacy.html'],
+    ['/zh-CN/flashnote/support.html', 'zh-CN/flashnote/support.html'],
+    ['/en-US/flashnote/', 'en-US/flashnote/index.html'],
+    ['/en-US/flashnote/privacy.html', 'en-US/flashnote/privacy.html'],
+    ['/en-US/flashnote/support.html', 'en-US/flashnote/support.html'],
   ];
   const ATTR = /(?:href|src)="([^"]+)"/g;
   const SKIP = ['http://', 'https://', 'mailto:', '#'];

@@ -4,6 +4,8 @@
  * 语言探测只发生在应用跳转页，内容页不含任何 <script>；
  * nav-links 与 footer-links 第一项由 AppLayout 统一置入「返回主站入口」（ISSUE-122 强制条款由布局保证）；
  * 语言互切写 hapaul-lang，index 页落目录形态、其余页落 <page>.html。
+ * 内容页地址为 locale 前置全局路径：/<语言>/<app>/…（ISSUE-124 验收反馈定版）；
+ * 应用自有静态资源仍在 /<app>/images|screenshots/** 不动。
  */
 import HeadMeta from '../components/HeadMeta.astro';
 import LangPill from '../components/LangPill.astro';
@@ -37,8 +39,8 @@ interface Props {
 const { app, locale, page, title, description, canonical, alternates, bodyClass, faviconHref, navLinks = [], footerLinks = [], copyright } = Astro.props;
 const other = otherLocale(locale);
 const info = localeInfo(app, locale);
-const appIndexHref = `/${app.id}/${locale}/`;
-const langSwitchHref = page === 'index' ? `/${app.id}/${other}/` : `/${app.id}/${other}/${page}.html`;
+const appIndexHref = `/${locale}/${app.id}/`;
+const langSwitchHref = page === 'index' ? `/${other}/${app.id}/` : `/${other}/${app.id}/${page}.html`;
 const pillLabel = locale === 'zh-CN' ? 'English' : '中文';
 ---
 

@@ -23,13 +23,13 @@ const app = getApp('flashnote');
 if (!app) throw new Error('FlashNote 未在应用清单中登记');
 const zh = locale === 'zh-CN';
 const navLinks = [
-  { href: `/flashnote/${locale}/#features`, label: zh ? '功能特点' : 'Features' },
-  { href: `/flashnote/${locale}/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
-  { href: `/flashnote/${locale}/support.html`, label: zh ? '支持' : 'Support' },
+  { href: `/${locale}/flashnote/#features`, label: zh ? '功能特点' : 'Features' },
+  { href: `/${locale}/flashnote/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
+  { href: `/${locale}/flashnote/support.html`, label: zh ? '支持' : 'Support' },
 ];
 const footerLinks = [
-  { href: `/flashnote/${locale}/support.html`, label: zh ? '支持' : 'Support' },
-  { href: `/flashnote/${locale}/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
+  { href: `/${locale}/flashnote/support.html`, label: zh ? '支持' : 'Support' },
+  { href: `/${locale}/flashnote/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
 ];
 ---
 

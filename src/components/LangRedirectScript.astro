@@ -1,26 +1,33 @@
 ---
 /**
  * 语言探测跳转脚本（AC2/AC3）。
- * 站点根与应用根两个跳转页渲染同一组件 → 产物内两段脚本逐字节一致；
- * is:inline 保证原样透传：不被构建处理、保持 <head> 内同步内联、首帧前 location.replace。
+ * 站点根与应用根两个跳转页渲染同一组件：探测逻辑只写一份、逐字节一致；
+ * 仅落地段随页面而异 —— segment='' 落 /<语言>/，segment='/flashnote' 落 /<语言>/flashnote/
+ * （locale 前置全局路径，ISSUE-124 验收反馈定版）。
+ * is:inline + set:html 原样透传：不被构建处理、保持 <head> 内同步内联、首帧前 location.replace。
  * 判定顺序（必须保持的现状行为）：localStorage 记忆 > navigator.languages 任一项 zh 开头 > 其余 en-US；
  * languages 为空/缺省回退 navigator.language；localStorage 不可用静默走浏览器语言。
  */
+interface Props {
+  /** 落地应用段：站点根 ''，应用 '/<app id>' */
+  segment?: string;
+}
+const { segment = '' } = Astro.props;
+const script = `var HAPUAL_JUMP_PATH = '${segment}';
+(function () {
+  var lang = null;
+  try {
+    var saved = localStorage.getItem('hapaul-lang');
+    if (saved === 'zh-CN' || saved === 'en-US') lang = saved;
+  } catch (e) {}
+  if (!lang) {
+    var candidates = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
+    for (var i = 0; i < candidates.length; i++) {
+      if (/^zh/i.test(candidates[i] || '')) { lang = 'zh-CN'; break; }
+    }
+  }
+  location.replace('/' + (lang || 'en-US') + HAPUAL_JUMP_PATH + '/');
+})();`;
 ---
 
-<script is:inline>
-  (function () {
-    var lang = null;
-    try {
-      var saved = localStorage.getItem('hapaul-lang');
-      if (saved === 'zh-CN' || saved === 'en-US') lang = saved;
-    } catch (e) {}
-    if (!lang) {
-      var candidates = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
-      for (var i = 0; i < candidates.length; i++) {
-        if (/^zh/i.test(candidates[i] || '')) { lang = 'zh-CN'; break; }
-      }
-    }
-    location.replace((lang || 'en-US') + '/');
-  })();
-</script>
+<script is:inline set:html={script} />

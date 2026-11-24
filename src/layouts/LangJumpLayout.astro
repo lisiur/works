@@ -2,7 +2,9 @@
 /**
  * 跳转页骨架（站点根 / 与应用根 /<app>/ 共用，AC2 同构）：
  * <head> 内同一段探测脚本 + 内联样式（is:inline 原样透传），禁 JS 时呈现双语手动入口（AC4）。
- * basePath：站点根传 ''，应用传 '/<app id>' —— 双语入口与 hreflang 随之前缀（与基线解析结果一致）。
+ * 地址为 locale 前置全局路径：jumpSegment=''（站点根）落 /<语言>/；
+ * jumpSegment='/<app id>'（应用根）落 /<语言>/<app>/（ISSUE-124 验收反馈定版）。
+ * hreflang 双语目标同样带段前缀，x-default 指跳转页自身。
  */
 import HeadMeta from '../components/HeadMeta.astro';
 import LangRedirectScript from '../components/LangRedirectScript.astro';
@@ -13,16 +15,17 @@ interface Props {
   title: string;
   description: string;
   alternates: AlternateLink[];
-  basePath?: string;
+  /** 落地应用段：站点根 ''，应用 '/<app id>' */
+  jumpSegment?: string;
 }
-const { title, description, alternates, basePath = '' } = Astro.props;
+const { title, description, alternates, jumpSegment = '' } = Astro.props;
 ---
 
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
   <HeadMeta title={title} description={description} alternates={alternates} />
-  <LangRedirectScript />
+  <LangRedirectScript segment={jumpSegment} />
   <style is:inline>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -65,8 +68,8 @@ const { title, description, alternates, basePath = '' } = Astro.props;
   <main class="lang-picker">
     <h1>{title}</h1>
     <nav>
-      <a href={`${basePath}/zh-CN/`}>中文</a>
-      <a href={`${basePath}/en-US/`}>English</a>
+      <a href={`/zh-CN${jumpSegment}/`}>中文</a>
+      <a href={`/en-US${jumpSegment}/`}>English</a>
     </nav>
   </main>
 </body>

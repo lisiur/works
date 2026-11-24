@@ -2,6 +2,7 @@
 /**
  * 应用跳转页（/<app>/）：由应用清单数据驱动（getStaticPaths），
  * 接入新应用登记一条数据即自动获得，站点层零改动（AC11）。
+ * 探测后落 locale 前置的 /<语言>/<app>/。
  */
 import LangJumpLayout from '../../layouts/LangJumpLayout.astro';
 import { apps } from '../../data/apps';
@@ -18,9 +19,9 @@ const { app } = Astro.props;
   title={app.jumpTitle}
   description={app.jumpDescription}
   alternates={[
-    { hreflang: 'zh-Hans', href: abs(`/${app.id}/zh-CN/`) },
-    { hreflang: 'en-US', href: abs(`/${app.id}/en-US/`) },
+    { hreflang: 'zh-Hans', href: abs(`/zh-CN/${app.id}/`) },
+    { hreflang: 'en-US', href: abs(`/en-US/${app.id}/`) },
     { hreflang: 'x-default', href: abs(`/${app.id}/`) },
   ]}
-  basePath={`/${app.id}`}
+  jumpSegment={`/${app.id}`}
 />
