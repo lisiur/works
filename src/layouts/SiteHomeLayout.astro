@@ -1,0 +1,60 @@
+---
+/**
+ * 站点首页骨架：卡片与页脚链接由应用清单数据驱动（AC11——加应用不改本文件），
+ * hero / 分区文案作为 props 留在两个首页页面文件内（DM 方案接口契约）。
+ */
+import HeadMeta from '../components/HeadMeta.astro';
+import SiteNav from '../components/SiteNav.astro';
+import AppCard from '../components/AppCard.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { apps } from '../data/apps';
+import { abs, htmlLang, otherLocale, type AlternateLink, type Locale } from '../lib/i18n';
+import '../styles/site.css';
+
+interface Props {
+  locale: Locale;
+  title: string;
+  heroTagline: string;
+  sectionLabel: string;
+  sectionTitle: string;
+  moreNote: string;
+  copyright: string;
+}
+const props = Astro.props;
+const canonical = abs(`/${props.locale}/`);
+const alternates: AlternateLink[] = [
+  { hreflang: 'zh-Hans', href: abs('/zh-CN/') },
+  { hreflang: 'en-US', href: abs('/en-US/') },
+];
+---
+
+<!DOCTYPE html>
+<html lang={htmlLang[props.locale]}>
+<head>
+  <HeadMeta title={props.title} canonical={canonical} alternates={alternates} />
+</head>
+<body>
+  <SiteNav locale={props.locale} />
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Hapaul Apps</h1>
+      <p class="tagline">{props.heroTagline}</p>
+    </section>
+
+    <!-- Apps -->
+    <section class="apps" id="apps">
+      <p class="section-label">{props.sectionLabel}</p>
+      <h2 class="section-title">{props.sectionTitle}</h2>
+      <div class="apps-grid">
+        {apps.map((app) => <AppCard app={app} locale={props.locale} />)}
+      </div>
+      <p class="more-note">{props.moreNote}</p>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <SiteFooter locale={props.locale} copyright={props.copyright} />
+</body>
+</html>

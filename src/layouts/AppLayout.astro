@@ -1,0 +1,90 @@
+---
+/**
+ * 应用内容页共享骨架（AC3/AC5/AC12）：
+ * 语言探测只发生在应用跳转页，内容页不含任何 <script>；
+ * nav-links 与 footer-links 第一项由 AppLayout 统一置入「返回主站入口」（ISSUE-122 强制条款由布局保证）；
+ * 语言互切写 hapaul-lang，index 页落目录形态、其余页落 <page>.html。
+ */
+import HeadMeta from '../components/HeadMeta.astro';
+import LangPill from '../components/LangPill.astro';
+import AllAppsLink from '../components/AllAppsLink.astro';
+import { localeInfo, type AppEntry } from '../data/apps';
+import { htmlLang, otherLocale, type AlternateLink, type Locale } from '../lib/i18n';
+
+export interface NavLink {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  app: AppEntry;
+  locale: Locale;
+  /** 'index' → 语言互切用目录形态；其余为 <page>.html（与基线解析结果一致） */
+  page: string;
+  title: string;
+  description?: string;
+  canonical?: string;
+  alternates?: AlternateLink[];
+  /** 如 'light-bg'（隐私 / 支持页），与基线一致 */
+  bodyClass?: string;
+  /** favicon 根绝对路径；不传则不输出（有则保留、无则不新增） */
+  faviconHref?: string;
+  /** 「返回主站入口」之后的 nav-links / footer-links */
+  navLinks?: NavLink[];
+  footerLinks?: NavLink[];
+  copyright: string;
+}
+const { app, locale, page, title, description, canonical, alternates, bodyClass, faviconHref, navLinks = [], footerLinks = [], copyright } = Astro.props;
+const other = otherLocale(locale);
+const info = localeInfo(app, locale);
+const appIndexHref = `/${app.id}/${locale}/`;
+const langSwitchHref = page === 'index' ? `/${app.id}/${other}/` : `/${app.id}/${other}/${page}.html`;
+const pillLabel = locale === 'zh-CN' ? 'English' : '中文';
+---
+
+<!DOCTYPE html>
+<html lang={htmlLang[locale]}>
+<head>
+  <HeadMeta title={title} description={description} canonical={canonical} alternates={alternates} />
+  {faviconHref && <link rel="icon" type="image/png" href={faviconHref}>}
+</head>
+<body class={bodyClass}>
+
+  <!-- Navigation -->
+  <header class="site-nav">
+    <a class="nav-logo" href={appIndexHref}>
+      <div class="nav-logo-icon">
+        <img src={`/${app.id}/images/icon.png`} alt={app.jumpTitle} class="logo-nav-logo-icon" style="width:28px;height:28px;border-radius:inherit">
+      </div>
+      <span>{info.shortName}</span>
+    </a>
+    <div class="nav-right">
+      <nav class="nav-links">
+        <AllAppsLink locale={locale} />
+        {navLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+      </nav>
+      <LangPill href={langSwitchHref} locale={other} label={pillLabel} />
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-logo">
+      <div class="footer-logo-icon">
+        <img src={`/${app.id}/images/icon.png`} alt={app.jumpTitle} class="logo-footer-logo-icon" style="width:24px;height:24px;border-radius:inherit">
+      </div>
+      <span>{info.shortName}</span>
+    </div>
+    <div class="footer-links">
+      <AllAppsLink locale={locale} />
+      {footerLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+    </div>
+    <p>{copyright}</p>
+  </footer>
+
+</body>
+</html>

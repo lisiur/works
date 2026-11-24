@@ -1,0 +1,15 @@
+---
+/**
+ * 语言互切入口（AC5）：onclick 写入 hapaul-lang（try/catch 静默失败），
+ * href 直落目标页规范地址 —— index 页目录形态、内容页 .html 形态（DM 链接归一规则）。
+ */
+interface Props {
+  href: string;
+  /** 目标语言，写入 localStorage 的值 */
+  locale: string;
+  label: string;
+}
+const { href, locale, label } = Astro.props;
+---
+
+<a class="lang-pill" href={href} onclick={`try{localStorage.setItem('hapaul-lang','${locale}')}catch(e){}`}>{label}</a>

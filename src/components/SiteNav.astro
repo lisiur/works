@@ -1,0 +1,25 @@
+---
+/**
+ * 站点首页导航：logo（SVG 方块）+ 语言互切（站点首页无 nav-links，与基线一致）。
+ */
+import LangPill from './LangPill.astro';
+import { otherLocale, type Locale } from '../lib/i18n';
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const other = otherLocale(locale);
+---
+
+<header class="site-nav">
+  <a class="nav-logo" href={`/${locale}/`}>
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>
+    </div>
+    <span>Hapaul Apps</span>
+  </a>
+  <div class="nav-right">
+    <LangPill href={`/${other}/`} locale={other} label={locale === 'zh-CN' ? 'English' : '中文'} />
+  </div>
+</header>

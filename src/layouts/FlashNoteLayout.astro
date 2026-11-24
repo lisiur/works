@@ -1,0 +1,51 @@
+---
+/**
+ * FlashNote 内容页骨架：在共享 AppLayout 之上固定本应用的导航项、页脚项、favicon 与版权行。
+ * 6 个内容页只写自己的 head 元信息与正文区（<slot />），站点层元素一律来自布局。
+ */
+import AppLayout from './AppLayout.astro';
+import { getApp } from '../data/apps';
+import { type AlternateLink, type Locale } from '../lib/i18n';
+import '../styles/flashnote.css';
+
+interface Props {
+  locale: Locale;
+  /** 'index' | 'privacy' | 'support'：决定语言互切目标形态 */
+  page: string;
+  title: string;
+  description?: string;
+  canonical?: string;
+  alternates?: AlternateLink[];
+  bodyClass?: string;
+}
+const { locale, page, title, description, canonical, alternates, bodyClass } = Astro.props;
+const app = getApp('flashnote');
+if (!app) throw new Error('FlashNote 未在应用清单中登记');
+const zh = locale === 'zh-CN';
+const navLinks = [
+  { href: `/flashnote/${locale}/#features`, label: zh ? '功能特点' : 'Features' },
+  { href: `/flashnote/${locale}/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
+  { href: `/flashnote/${locale}/support.html`, label: zh ? '支持' : 'Support' },
+];
+const footerLinks = [
+  { href: `/flashnote/${locale}/support.html`, label: zh ? '支持' : 'Support' },
+  { href: `/flashnote/${locale}/privacy.html`, label: zh ? '隐私政策' : 'Privacy Policy' },
+];
+---
+
+<AppLayout
+  app={app}
+  locale={locale}
+  page={page}
+  title={title}
+  description={description}
+  canonical={canonical}
+  alternates={alternates}
+  bodyClass={bodyClass}
+  faviconHref="/flashnote/images/favicon.png"
+  navLinks={navLinks}
+  footerLinks={footerLinks}
+  copyright="© 2026 FlashNote. All rights reserved."
+>
+  <slot />
+</AppLayout>

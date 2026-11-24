@@ -1,0 +1,21 @@
+---
+/**
+ * <head> 元信息：有则输出、无则不新增（AC8）。
+ * canonical / hreflang 用数据传入，不依赖 Astro.url —— preserve 模式下
+ * index 页 pathname 带尾斜杠、非 index 带 .html，手写数据避免形态漂移（DM 方案）。
+ */
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  alternates?: { hreflang: string; href: string }[];
+}
+const { title, description, canonical, alternates } = Astro.props;
+---
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{title}</title>
+{description && <meta name="description" content={description} />}
+{canonical && <link rel="canonical" href={canonical} />}
+{alternates && alternates.map((alt) => <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />)}

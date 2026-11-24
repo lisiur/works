@@ -1,0 +1,73 @@
+---
+/**
+ * 跳转页骨架（站点根 / 与应用根 /<app>/ 共用，AC2 同构）：
+ * <head> 内同一段探测脚本 + 内联样式（is:inline 原样透传），禁 JS 时呈现双语手动入口（AC4）。
+ * basePath：站点根传 ''，应用传 '/<app id>' —— 双语入口与 hreflang 随之前缀（与基线解析结果一致）。
+ */
+import HeadMeta from '../components/HeadMeta.astro';
+import LangRedirectScript from '../components/LangRedirectScript.astro';
+import type { AlternateLink } from '../lib/i18n';
+
+interface Props {
+  /** 跳转页 <title>（与 <h1> 同文案，与基线一致） */
+  title: string;
+  description: string;
+  alternates: AlternateLink[];
+  basePath?: string;
+}
+const { title, description, alternates, basePath = '' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <HeadMeta title={title} description={description} alternates={alternates} />
+  <LangRedirectScript />
+  <style is:inline>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      background: #000;
+      color: #f5f5f7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lang-picker {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 48px 56px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+    }
+    .lang-picker h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.5px; }
+    .lang-picker nav { display: flex; gap: 16px; }
+    .lang-picker a {
+      display: inline-flex;
+      align-items: center;
+      height: 40px;
+      padding: 0 24px;
+      font-size: 15px;
+      color: #f5f5f7;
+      text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .lang-picker a:hover { border-color: rgba(0,122,255,0.5); background: rgba(255,255,255,0.06); }
+  </style>
+</head>
+<body>
+  <main class="lang-picker">
+    <h1>{title}</h1>
+    <nav>
+      <a href={`${basePath}/zh-CN/`}>中文</a>
+      <a href={`${basePath}/en-US/`}>English</a>
+    </nav>
+  </main>
+</body>
+</html>

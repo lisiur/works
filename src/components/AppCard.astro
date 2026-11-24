@@ -1,0 +1,20 @@
+---
+/**
+ * 首页应用卡片：图标 / 名称 / 一句话简介 / 入口，全部来自应用清单数据（AC11）。
+ */
+import { localeInfo, type AppEntry } from '../data/apps';
+import { type Locale } from '../lib/i18n';
+
+interface Props {
+  app: AppEntry;
+  locale: Locale;
+}
+const { app, locale } = Astro.props;
+const info = localeInfo(app, locale);
+---
+
+<a class="app-card" href={`/${app.id}/`}>
+  <img class="app-card-icon" src={app.icon} alt={app.jumpTitle}>
+  <h3 class="app-card-name">{info.name}</h3>
+  <p class="app-card-desc">{info.tagline}</p>
+</a>
