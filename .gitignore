@@ -3,5 +3,10 @@
 .opencode/
 AGENTS.md
 
+# Astro 工程（ISSUE-124 AC9：产物与依赖不入库）
+dist/
+node_modules/
+.astro/
+
 # 系统文件
 .DS_Store
