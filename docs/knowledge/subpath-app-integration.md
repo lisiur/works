@@ -8,7 +8,7 @@
 - **场景**：页面迁为 Astro 路由后，判断站内链接写法是否正确、改动是否部署安全。
 - **症状**（违反时）：链接落到错误路径（404 或落错语言 / 层级）；产物级自测 sweep 报断链。
 - **做法**：站内链接一律**根绝对路径**；语言子树在前——index 页一律目录形态（`/zh-CN/`、`/zh-CN/flashnote/`），内容页保留 `.html` 形态（`/zh-CN/flashnote/privacy.html`）；带锚点的 index 目标写目录形态 + fragment（`/zh-CN/flashnote/#features`）；应用自有静态资源在应用段下（`/flashnote/images/…`），不随内容页进语言子树；外链（应用商店、mailto）原样写。「全相对路径」旧纪律已随 ISSUE-124 重构有意解除，改用产物级地址清单 + 断链 sweep 验收。
-- **交付自检**：`pnpm verify` 的 sweep 对产物全部 href/src 做 resolve → 剥 `#fragment` → `/dir/index.html` 归一为 `/dir/` 后逐一请求，断链数 0。
+- **交付自检**：`pnpm verify` 的 sweep 对产物全部 href/src 做 resolve → 剥 `#fragment` 后按字面路径逐一请求（目录形态与 `.html` 形态在本地静态服务和 GitHub Pages 上均直接可达），断链数 0。
 
 ## 语言跳转页与偏好记忆
 

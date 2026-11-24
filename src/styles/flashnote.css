@@ -67,6 +67,8 @@ main { flex: 1; }
 .footer-logo-icon svg { width: 14px; height: 14px; fill: white; }
 .footer-logo span { font-size: 14px; font-weight: 600; }
 .light-bg .footer-logo span { color: #1d1d1f; }
+.light-bg .footer-links a { color: rgba(29,29,31,0.6); }
+.light-bg .footer-links a:hover { color: #1d1d1f; }
 footer p { font-size: 13px; color: rgba(245,245,247,0.4); }
 .light-bg footer p { color: rgba(29,29,31,0.4); }
 
