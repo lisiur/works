@@ -1,88 +1,64 @@
 # 新增应用 Homepage 接入约定
 
-本站点（apps.hapaul.top）是纯静态 GitHub Pages 站点，发布根 = 仓库根，**无构建步骤**。新增一个应用 Homepage = 「建子目录 + 放图标 + 登记两张卡片 + 内容页加返回主站入口」，照本文五步做即可，不需要改任何构建配置。
+本站点（apps.hapaul.top）由 Astro 构建、GitHub Actions 自动发布。接入一个新应用 = 「登记一条应用数据 + 放图标 + 写该应用自己的页面内容」；站点层（双语首页卡片、页脚链接、应用跳转页、返回主站入口）由共享布局与应用清单数据自动生成，**全程不需要改动任何站点层文件**。
 
-## 1. 目录契约
+## 0. 工程命令
 
-- 每个应用一个子目录，名为**小写应用名**：`flashnote/`、`gitpeek/`、`pinecone/`…
-- 应用目录内是「跳转页 + 双语对称」结构，与站点根完全对称：应用根 `index.html` 是**语言探测跳转页**（站点根同款内联脚本），内容页分居 `zh-CN/` 与 `en-US/`。
-- 应用官网的全部资源（样式、图片、截图）**只放在自己的子目录内**，与站点其他部分互不引用。
-- 站内互链一律使用**相对路径**（同层直接写、跨层用 `../`），不要写根绝对路径（`/xxx`）和绝对域名，保证任意子路径下都能打开。
-- 站点层入口：根 `index.html`（语言探测跳转页）、`zh-CN/index.html`（中文首页）、`en-US/index.html`（英文首页），属于站点自有文件，不要动。
-- **语言偏好记忆**：语言互切链接的 `onclick` 把目标语言写入 `localStorage`（key `hapaul-lang`，合法值 `zh-CN` / `en-US`），站点根与应用根的跳转页共用同一份记忆；新应用照抄现有页面的写法即可。
-
+```bash
+pnpm install        # 安装依赖（锁文件入库）
+pnpm dev            # 本地开发（源码模式，仅供写页面时预览）
+pnpm build          # 构建产物到 dist/（验收对象是产物）
+pnpm verify         # 构建 + 产物级自测（断链 sweep、地址清单、语言跳转用例）全绿
+pnpm preview        # 对构建产物起本地服务（http://localhost:4321）
 ```
-works/
-├── index.html              # 站点根：语言探测跳转页
-├── zh-CN/index.html        # 站点首页（中文）
-├── en-US/index.html        # 站点首页（英文）
-├── styles.css              # 站点首页样式
-├── assets/icons/<app>.png  # 首页卡片图标（首页所有）
-├── flashnote/              # 应用子目录：跳转页 + 双语对称
-│   ├── index.html          # 应用根：语言探测跳转页
-│   ├── zh-CN/…             # 中文内容页
-│   ├── en-US/…             # 英文内容页
-│   └── images/…
-└── <new-app>/              # 新应用照此结构
+
+## 1. 登记应用数据（唯一登记点）
+
+编辑 `src/data/apps.ts`，在 `apps` 数组追加一条 `AppEntry`：
+
+```ts
+{
+  id: 'newapp',                                   // 子路径 → /newapp/
+  icon: '/assets/icons/newapp.png',               // 卡片图标，根绝对路径
+  jumpTitle: 'NewApp',                            // 跳转页 <title>/<h1>/卡片 img alt
+  jumpDescription: 'NewApp — 一句话 · One line.', // 跳转页 description
+  zh: { name: '应用名 NewApp', tagline: '一句话简介', shortName: '应用名' },
+  en: { name: 'NewApp', tagline: 'One-line description', shortName: 'NewApp' },
+}
 ```
+
+| 字段 | 用在哪 |
+|---|---|
+| `id` | 子路径；`/newapp/` 跳转页由 `src/pages/[app]/index.astro` 自动生成 |
+| `icon` | 两张语言首页卡片的图标（卡片 `<img alt>` 用 `jumpTitle`） |
+| `jumpTitle` / `jumpDescription` | 应用跳转页 `<title>` / `<h1>` / description / hreflang 自指 |
+| `zh.name` / `en.name` | 卡片名称与首页页脚链接文案 |
+| `zh.tagline` / `en.tagline` | 卡片一句话简介 |
+| `zh.shortName` / `en.shortName` | 应用内容页导航与页脚 logo 短名 |
+
+登记后构建：双语首页自动出现对应语言的卡片与页脚链接，`/newapp/` 自动出现跳转页（同一段探测脚本 + 禁 JS 双入口）——不改首页、跳转页、导航页脚组件中的任何一个。
 
 ## 2. 图标位置
 
-首页卡片图标统一放在 `assets/icons/<app>.png`（首页所有，与应用子目录解耦——还没有 Homepage 的应用也可以只放图标供未来使用）。建议 1024×1024 PNG；当前 `flashnote.png` 直接取自应用图标。
+首页卡片图标统一放在 `public/assets/icons/<app>.png`（建议 1024×1024 PNG）。`public/` 下的文件按原路径原样进入产物：`public/CNAME`、`public/assets/**`、`public/<app>/images|screenshots/**`。
 
-## 3. 双语登记卡片
+## 3. 应用页面内容
 
-首页有两处登记点（`zh-CN/index.html` 中文文案、`en-US/index.html` 英文文案），**各加一个卡片**（四字段：图标、名称、一句话简介、入口链接）。两页现在同为目录下第一层，入口链接统一带 `../` 前缀：
+- **跳转页不用写**：`/newapp/` 由应用清单数据自动生成。
+- **内容页**：放 `src/pages/<app>/zh-CN/*.astro` 与 `src/pages/<app>/en-US/*.astro`，复用共享布局——参照 FlashNote 的做法：应用自有 `xxxLayout.astro` 包一层共享的 `src/layouts/AppLayout.astro`，传入本应用的导航项、页脚项与版权行；页面只写自己的 head 元信息与正文区。
+- **返回主站入口不用写**：内容页 `nav-links` 与 `footer-links` 首位的「全部应用 / All Apps」由 `AppLayout.astro` 统一置入（落主站对应语言首页并写入 `hapaul-lang`，try/catch 静默失败），页面不需要也不能手写。
+- **语言互切不用写**：`lang-pill` 由布局生成，index 页落目录形态（`/<app>/<另一语言>/`）、其余页落 `.html` 形态。
+- **链接写法**：站内链接一律根绝对路径；index 页目录形态（`/zh-CN/`、`/newapp/zh-CN/`），内容页 `.html` 形态（`/newapp/privacy.html`）；带锚点的 index 目标写目录形态 + fragment（`/newapp/zh-CN/#features`）。外链（应用商店、mailto）原样写。
 
-- `zh-CN/index.html`：
-
-```html
-<a class="app-card" href="../new-app/">
-  <img class="app-card-icon" src="../assets/icons/new-app.png" alt="NewApp">
-  <h3 class="app-card-name">应用名</h3>
-  <p class="app-card-desc">一句话简介</p>
-</a>
-```
-
-- `en-US/index.html`（同模板，文案换英文）：
-
-```html
-<a class="app-card" href="../new-app/">
-  <img class="app-card-icon" src="../assets/icons/new-app.png" alt="NewApp">
-  <h3 class="app-card-name">App Name</h3>
-  <p class="app-card-desc">One-line description</p>
-</a>
-```
-
-## 4. 返回主站入口（强制，覆盖全部内容页）
-
-每个应用的**全部内容页**（`zh-CN/` 与 `en-US/` 目录下所有页面）都必须带返回主站入口：顶部导航（`nav-links`）与页脚（`footer-links`）**各一处、均为第一项**，复用现有样式，不加图标、不加新 class。应用根跳转页 `index.html` **不加入口**——它是瞬时重定向页，用户正常不会停留。入口 href 直落主站**对应语言**首页，并照 `lang-pill` 现有模式在 `onclick` 里把该语言写入 `hapaul-lang`（try/catch 静默失败；禁 JS 时 href 本身仍可落地）。
-
-两行模板（内容页都在 `<应用>/<语言>/` 一层，`../../` 即站点根；层级不同时按相对路径纪律调整前缀）：
-
-- `zh-CN/` 各内容页，nav-links 与 footer-links 首位各插一行：
-
-```html
-<a href="../../zh-CN/index.html" onclick="try{localStorage.setItem('hapaul-lang','zh-CN')}catch(e){}">全部应用</a>
-```
-
-- `en-US/` 各内容页，同位置插入，文案与语言值换英文侧：
-
-```html
-<a href="../../en-US/index.html" onclick="try{localStorage.setItem('hapaul-lang','en-US')}catch(e){}">All Apps</a>
-```
-
-## 5. 本地自检
-
-接入后、推送前，本地起静态服务验证：
+## 4. 本地自检
 
 ```bash
-python3 -m http.server 8123
+pnpm verify     # 断链 0、地址清单、跳转用例全绿
+pnpm preview    # http://localhost:4321 逐页人工过一遍
 ```
 
-- 打开 `http://localhost:8123/` —— 自动跳转到 `/zh-CN/`（浏览器语言 `zh` 开头）或 `/en-US/`（其余语言）；浏览器禁 JS 时呈现中文 / English 两个手动入口链接；
-- 打开 `http://localhost:8123/zh-CN/`、`http://localhost:8123/en-US/` —— 两语言卡片可见、入口 `../new-app/` 可达；
-- 打开 `http://localhost:8123/flashnote/` —— 应用根跳转页同样自动落地 `zh-CN/` 或 `en-US/`；
-- 应用页内样式 / 图片全部加载、页内互链无断链；
-- 每个内容页 nav 与 footer 的「全部应用 / All Apps」入口落地主站对应语言首页（`/zh-CN/`、`/en-US/`）、无断链；
-- 确认无误后 commit + push 到任务分支（站点发布由 main 分支的 GitHub Pages 完成，Dev / DM 均不直接操作 main）。
+- `scripts/verify-links.mjs` 顶部的期望清单（HTML 路径 + 12 种地址）与站点页面清单一一对应——**接入新应用后同步更新该清单**（新增 `newapp/index.html`、`newapp/<locale>/…` 与对应地址），再跑 `pnpm verify`；
+- `http://localhost:4321/newapp/` 自动落 `/newapp/zh-CN/`（浏览器语言 zh 开头）或 `/newapp/en-US/`；禁 JS 呈现中文 / English 手动入口；
+- `http://localhost:4321/zh-CN/`、`http://localhost:4321/en-US/` 两语言卡片可见、入口可达；
+- 内容页样式 / 图片全部加载、页内互链无断链（`pnpm verify` 已覆盖）；
+- 确认无误后 commit + push 到任务分支；合并 `main` 由 Lead 在收尾阶段执行，GitHub Actions 随 push 自动构建发布。
