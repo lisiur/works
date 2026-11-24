@@ -1,0 +1,33 @@
+name: Deploy to GitHub Pages
+
+# ISSUE-124 AC10：推送 main 或手动触发即构建并发布，不依赖本地环境。
+# 首次启用顺序（Lisiur Day 手动操作）：仓库 Settings → Pages → Source 切
+# GitHub Actions → 手动 workflow_dispatch 触发首跑（合并那次 push 发生在切换前），
+# Actions 全绿后线上补验（12 种地址 200、apps.hapaul.top 与 HTTPS 正常、旧地址 404）。
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: withastro/action@v6
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
