@@ -1,6 +1,6 @@
 # 新增应用 Homepage 接入约定
 
-本站点（apps.hapaul.top）是纯静态 GitHub Pages 站点，发布根 = 仓库根，**无构建步骤**。新增一个应用 Homepage = 「建子目录 + 放图标 + 登记两张卡片」，照本文四步做即可，不需要改任何构建配置。
+本站点（apps.hapaul.top）是纯静态 GitHub Pages 站点，发布根 = 仓库根，**无构建步骤**。新增一个应用 Homepage = 「建子目录 + 放图标 + 登记两张卡片 + 内容页加返回主站入口」，照本文五步做即可，不需要改任何构建配置。
 
 ## 1. 目录契约
 
@@ -54,7 +54,25 @@ works/
 </a>
 ```
 
-## 4. 本地自检
+## 4. 返回主站入口（强制，覆盖全部内容页）
+
+每个应用的**全部内容页**（`zh-CN/` 与 `en-US/` 目录下所有页面）都必须带返回主站入口：顶部导航（`nav-links`）与页脚（`footer-links`）**各一处、均为第一项**，复用现有样式，不加图标、不加新 class。应用根跳转页 `index.html` **不加入口**——它是瞬时重定向页，用户正常不会停留。入口 href 直落主站**对应语言**首页，并照 `lang-pill` 现有模式在 `onclick` 里把该语言写入 `hapaul-lang`（try/catch 静默失败；禁 JS 时 href 本身仍可落地）。
+
+两行模板（内容页都在 `<应用>/<语言>/` 一层，`../../` 即站点根；层级不同时按相对路径纪律调整前缀）：
+
+- `zh-CN/` 各内容页，nav-links 与 footer-links 首位各插一行：
+
+```html
+<a href="../../zh-CN/index.html" onclick="try{localStorage.setItem('hapaul-lang','zh-CN')}catch(e){}">全部应用</a>
+```
+
+- `en-US/` 各内容页，同位置插入，文案与语言值换英文侧：
+
+```html
+<a href="../../en-US/index.html" onclick="try{localStorage.setItem('hapaul-lang','en-US')}catch(e){}">All Apps</a>
+```
+
+## 5. 本地自检
 
 接入后、推送前，本地起静态服务验证：
 
@@ -66,4 +84,5 @@ python3 -m http.server 8123
 - 打开 `http://localhost:8123/zh-CN/`、`http://localhost:8123/en-US/` —— 两语言卡片可见、入口 `../new-app/` 可达；
 - 打开 `http://localhost:8123/flashnote/` —— 应用根跳转页同样自动落地 `zh-CN/` 或 `en-US/`；
 - 应用页内样式 / 图片全部加载、页内互链无断链；
+- 每个内容页 nav 与 footer 的「全部应用 / All Apps」入口落地主站对应语言首页（`/zh-CN/`、`/en-US/`）、无断链；
 - 确认无误后 commit + push 到任务分支（站点发布由 main 分支的 GitHub Pages 完成，Dev / DM 均不直接操作 main）。
