@@ -8,7 +8,7 @@
 - **场景**：任何页面 / 样式 / 数据 / 文案改动后的本地验收。**验收对象是构建产物，不是 dev 源码。**
 - **症状**（脚本不当时）：大量带锚点的链接（`xxx#anchor`）被误报 404——URL 的 `#fragment` 不随 HTTP 请求发送。
 - **做法**：
-  1. `pnpm verify` = `astro build` + `scripts/verify-links.mjs` + `scripts/verify-redirect.mjs`。两个脚本的期望清单（HTML 集合、地址清单、sweep 页面集、跳转用例矩阵、禁 JS 入口断言）由 `src/i18n/locales.json` + 应用文案模块文件名（`src/i18n/copy/apps/`）+ 页面模板（`src/pages/[locale]/<app>/`）**自动推导**，接语言 / 接应用无需改脚本；唯一手写项是历史下线地址 `gone`：
+  1. `pnpm verify` = `astro build` + `scripts/verify-links.mjs` + `scripts/verify-redirect.mjs`。两个脚本的期望清单（HTML 集合、地址清单、sweep 页面集、跳转用例矩阵、禁 JS 入口断言）由 `src/i18n/locales.json` + 应用文案模块文件名（`src/i18n/messages/apps/`）+ 页面模板（`src/pages/[locale]/<app>/`）**自动推导**，接语言 / 接应用无需改脚本；唯一手写项是历史下线地址 `gone`：
      - verify-links：对 `dist/` 起零依赖静态服务（尾斜杠 → 目录 index，不存在 → 404），断言产物 HTML 集合与推导页面清单一一对应、全部页面地址（含 index 页 `.html` 直写形态）200、已下线旧地址（ISSUE-119 集合 `/en/`、`/flashnote/en/` 等；重构前旧样式路径 `/styles.css`、`/flashnote/styles.css`；locale 前置改版前的 `/{app}/{locale}/…` 页面地址）全部 404；随后爬全部页面 href/src，剥 `#fragment` 后逐一请求，断链数应为 0；
      - verify-redirect：从产物抽各跳转页（站点根 + 每个应用根）的内联脚本，断言判定逻辑逐字节一致、各自落地段（`HAPUAL_JUMP_PATH`）正确；mock `navigator.languages` / `navigator.language` / `localStorage` / `location.replace` 跑跳转用例矩阵（用例期望值由登记语义模拟推导——候选序 × 登记序规则匹配、记忆优先、回退兜底；站点根落 `/{语言}/`，应用根落 `/{语言}/{app}/`）；断言全部内容页不含任何 `<script>`；断言跳转页禁 JS 呈现全部登记语言的手动入口。
      - 用例条数随登记推导变化（当前双语言登记下为 17 条站点根 + 4 条应用根 + 2 条落地形态 = 23 条），口径以脚本运行输出为准，文档不再固定条数。
@@ -29,4 +29,4 @@
 ## 首页卡片登记口径
 
 - **场景**：首页新增或修改应用卡片。
-- **做法**：卡片不再手写——在 `src/data/apps.ts` 登记一条 `AppEntry`（图标、应用段 id、语言中性的跳转页元信息），并在 `src/i18n/copy/apps/<appId>.ts` 登记各语言的名称 / 简介 / 短名；各语言首页的卡片与页脚链接、应用跳转页由数据自动生成；接入步骤见 `ADDING-AN-APP.md`。
+- **做法**：卡片不再手写——在 `src/data/apps.ts` 登记一条 `AppEntry`（图标、应用段 id、语言中性的跳转页元信息），并在 `src/i18n/messages/apps/<appId>.ts` 登记各语言的名称 / 简介 / 短名；各语言首页的卡片与页脚链接、应用跳转页由数据自动生成；接入步骤见 `ADDING-AN-APP.md`。

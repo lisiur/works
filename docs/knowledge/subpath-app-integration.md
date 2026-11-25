@@ -1,6 +1,6 @@
 # 子路径应用集成纪律
 
-本站由 Astro 构建，地址结构为 **locale 前置全局路径**：每个语言一棵子树（`/zh-CN/`、`/en-US/`），应用是语言子树下的一段（`/zh-CN/flashnote/`、`/en-US/flashnote/…`）；应用根 `/<app>/` 是语言探测跳转页，探测后落 `/{语言}/{app}/`。站点遵循「页面单份 + 文案字典 + 语言登记」（ISSUE-129）：语言列表只在 `src/i18n/locales.json` 一处声明，页面结构只写一份（内容模板 `src/pages/[locale]/<app>/`），按语言的文案全部进 `src/i18n/copy/`（站点层 `site.ts` + 各应用 `apps/<appId>.ts`）；站点层（首页卡片、页脚链接、应用跳转页、返回主站入口、语言胶囊）由数据与共享布局自动生成。接入新应用、加一种语言、或把现成官网整站迁入语言子树时，适用以下稳定做法。
+本站由 Astro 构建，地址结构为 **locale 前置全局路径**：每个语言一棵子树（`/zh-CN/`、`/en-US/`），应用是语言子树下的一段（`/zh-CN/flashnote/`、`/en-US/flashnote/…`）；应用根 `/<app>/` 是语言探测跳转页，探测后落 `/{语言}/{app}/`。站点遵循「页面单份 + 文案字典 + 语言登记」（ISSUE-129）：语言列表只在 `src/i18n/locales.json` 一处声明，页面结构只写一份（内容模板 `src/pages/[locale]/<app>/`），按语言的文案全部进 `src/i18n/messages/`（站点层 `site.ts` + 各应用 `apps/<appId>.ts`）；站点层（首页卡片、页脚链接、应用跳转页、返回主站入口、语言胶囊）由数据与共享布局自动生成。接入新应用、加一种语言、或把现成官网整站迁入语言子树时，适用以下稳定做法。
 （ISSUE-124 起本篇按 Astro 构建体系改写；验收反馈后地址定版为 locale 前置。ISSUE-129 起页面单份化，成对语言页面与写死两种语言的分支清除，语言与文案全部由登记和文案数据驱动。）
 
 ## 根绝对路径与地址形态纪律
@@ -18,9 +18,9 @@
 ## 新应用接入流程
 
 - **场景**：接入一个新应用的 Homepage。
-- **做法**：照仓库根接入文档 `ADDING-AN-APP.md`——在 `src/data/apps.ts` 登记一条应用数据（语言中性字段）、在 `src/i18n/copy/apps/<appId>.ts` 为每种登记语言补一份应用文案、放图标（`public/assets/icons/`）、写**一份**内容页模板（`src/pages/[locale]/<app>/`，按语言登记生成全部语言，复用共享 `AppLayout.astro`）。站点层全部自动生成：各语言首页卡片、页脚链接、应用跳转页、返回主站入口（`AppLayout` 统一置入 nav + footer 首位）、语言胶囊；`pnpm verify` 期望清单自动推导，完成后直接自检，**无需同步任何自测脚本或站点层文件**。
+- **做法**：照仓库根接入文档 `ADDING-AN-APP.md`——在 `src/data/apps.ts` 登记一条应用数据（语言中性字段）、在 `src/i18n/messages/apps/<appId>.ts` 为每种登记语言补一份应用文案、放图标（`public/assets/icons/`）、写**一份**内容页模板（`src/pages/[locale]/<app>/`，按语言登记生成全部语言，复用共享 `AppLayout.astro`）。站点层全部自动生成：各语言首页卡片、页脚链接、应用跳转页、返回主站入口（`AppLayout` 统一置入 nav + footer 首位）、语言胶囊；`pnpm verify` 期望清单自动推导，完成后直接自检，**无需同步任何自测脚本或站点层文件**。
 
 ## 加一种语言流程
 
 - **场景**：站点接入一种新语言（扩展多语言）。
-- **做法**：只加数据——① `src/i18n/locales.json` 登记语言（code / htmlLang / hreflang / nativeLabel / match 浏览器匹配规则；fallback 恰好一个）；② `src/i18n/copy/site.ts` 补站点层文案；③ 每个 `src/i18n/copy/apps/<appId>.ts` 补应用文案。不改任何页面、布局、组件、自测脚本。文案不齐时构建闸门失败并逐条指明缺失条目与语言（AC11 口径）；补齐后产物、跳转页手动入口、语言胶囊、自测用例全部自动出现。三种及以上语言时胶囊视觉样式另行设计。
+- **做法**：只加数据——① `src/i18n/locales.json` 登记语言（code / htmlLang / hreflang / nativeLabel / match 浏览器匹配规则；fallback 恰好一个）；② `src/i18n/messages/site.ts` 补站点层文案；③ 每个 `src/i18n/messages/apps/<appId>.ts` 补应用文案。不改任何页面、布局、组件、自测脚本。文案不齐时构建闸门失败并逐条指明缺失条目与语言（AC11 口径）；补齐后产物、跳转页手动入口、语言胶囊、自测用例全部自动出现。三种及以上语言时胶囊视觉样式另行设计。

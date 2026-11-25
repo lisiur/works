@@ -25,7 +25,7 @@ const ruleLocales = registry.filter((entry) => entry.match);
 const fallbackCode = registry.find((entry) => entry.fallback).code;
 const codes = registry.map((entry) => entry.code);
 const appIds = fs
-  .readdirSync(path.join(SRC, 'i18n', 'copy', 'apps'))
+  .readdirSync(path.join(SRC, 'i18n', 'messages', 'apps'))
   .filter((f) => f.endsWith('.ts'))
   .map((f) => f.replace(/\.ts$/, ''))
   .sort();

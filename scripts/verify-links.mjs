@@ -4,7 +4,7 @@
  * resolve + 剥 #fragment 后逐一请求，断言断链数 0；
  * 同时断言 AC1：恰好 10 个 HTML、12 种地址 200、旧地址 404。
  * 期望清单（HTML 集合、地址清单、sweep 页面集）由语言登记（src/i18n/locales.json）
- * + 应用文案模块文件名（src/i18n/copy/apps/）+ 页面模板（src/pages/[locale]/<app>/）
+ * + 应用文案模块文件名（src/i18n/messages/apps/）+ 页面模板（src/pages/[locale]/<app>/）
  * 推导，接语言 / 接应用不再需要同步本脚本；唯一手写项是历史下线地址 `gone`。
  */
 import http from 'node:http';
@@ -22,7 +22,7 @@ const BASE = `http://127.0.0.1:${PORT}/`;
 const registry = JSON.parse(fs.readFileSync(path.join(SRC, 'i18n', 'locales.json'), 'utf8'));
 const locales = registry.map((entry) => entry.code);
 const appIds = fs
-  .readdirSync(path.join(SRC, 'i18n', 'copy', 'apps'))
+  .readdirSync(path.join(SRC, 'i18n', 'messages', 'apps'))
   .filter((f) => f.endsWith('.ts'))
   .map((f) => f.replace(/\.ts$/, ''))
   .sort();

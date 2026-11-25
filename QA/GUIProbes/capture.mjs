@@ -41,7 +41,7 @@ const SRC = path.join(ROOT, 'src');
 const registry = JSON.parse(fs.readFileSync(path.join(SRC, 'i18n', 'locales.json'), 'utf8'));
 const locales = registry.map((entry) => entry.code);
 const appIds = fs
-  .readdirSync(path.join(SRC, 'i18n', 'copy', 'apps'))
+  .readdirSync(path.join(SRC, 'i18n', 'messages', 'apps'))
   .filter((f) => f.endsWith('.ts'))
   .map((f) => f.replace(/\.ts$/, ''))
   .sort();

@@ -5,13 +5,13 @@
  */
 import { apps } from '../data/apps';
 import { localeCodes } from './locales';
-import { siteCopy, type SiteCopy } from './copy/site';
-import * as flashnoteCopy from './copy/apps/flashnote';
-export type { SiteCopy } from './copy/site';
-export type { FlashNoteCopy } from './copy/apps/flashnote';
+import { siteCopy, type SiteCopy } from './messages/site';
+import * as flashnoteCopy from './messages/apps/flashnote';
+export type { SiteCopy } from './messages/site';
+export type { FlashNoteCopy } from './messages/apps/flashnote';
 
 /**
- * 应用文案模块登记表：接入新应用在 copy/apps/ 下加一份模块并在此外登记一行。
+ * 应用文案模块登记表：接入新应用在 messages/apps/ 下加一份模块并在此外登记一行。
  * 与 src/data/apps.ts 的应用 id 集必须一致（校验 ③）。
  */
 const appCopyModules: Record<string, Record<string, unknown>> = {
@@ -129,10 +129,10 @@ for (const [appId, copyByLocale] of Object.entries(appCopyModules)) {
 
 // ③ 应用清单 id 集 ≡ 应用文案模块集
 for (const app of apps) {
-  if (!(app.id in appCopyModules)) errors.push(`应用 ${app.id} 缺少文案模块 src/i18n/copy/apps/${app.id}.ts`);
+  if (!(app.id in appCopyModules)) errors.push(`应用 ${app.id} 缺少文案模块 src/i18n/messages/apps/${app.id}.ts`);
 }
 for (const appId of Object.keys(appCopyModules)) {
-  if (!apps.some((app) => app.id === appId)) errors.push(`应用文案模块 src/i18n/copy/apps/${appId}.ts 未在应用清单登记`);
+  if (!apps.some((app) => app.id === appId)) errors.push(`应用文案模块 src/i18n/messages/apps/${appId}.ts 未在应用清单登记`);
 }
 
 if (errors.length > 0) {
