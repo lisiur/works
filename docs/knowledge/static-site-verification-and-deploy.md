@@ -15,6 +15,21 @@
   2. `pnpm preview`（http://localhost:4321）人工逐页过一遍（对照线上 https://apps.hapaul.top 现状）。
   3. 视觉回归（可选，UI 改动时）：`QA/GUIProbes/capture.mjs`（headless Chrome 对全部页面在 1440 / 390 两档宽度截图）+ `QA/GUIProbes/compare.mjs`（pixelmatch 逐对比对，threshold 0.1，目标 0 差异像素）。站点样式不含 `prefers-color-scheme` 查询，明暗由页面自身设计决定，无配色矩阵。
 
+## 「对外零变化」类重构的视觉等价判据：byte-diff 优先
+
+- **场景**：重构 / 数据化改造类任务要求产物「对外零变化」，需要客观判定视觉与内容等价；或评审复验他人声称的「产物一致」。
+- **做法**：
+  1. **主判据是产物字节等价**：用独立 worktree 从基线 commit 构建一份基线 `dist/`（不要在当前工作树切分支），交付分支构建后 `diff -r` 全量对比（HTML + 静态资源）。diff 为空 = 同 HTML 同 CSS ⇒ 任意浏览器渲染逐像素相同——演绎证明，强于任何截图比对；非空时才逐项定位差异。
+  2. **截图比对降级为佐证与定位手段**：byte-diff 全等后可再跑 `QA/GUIProbes/capture.mjs` + `QA/GUIProbes/compare.mjs`（见「产物级全量自测」第 3 条）互为印证；diff 非空时用截图缩小差异范围。
+  3. **比对矩阵按真实变异轴设计**：动手前先核实基线样式里有哪些真实变异轴（本站样式不含 `prefers-color-scheme` 查询，明暗由页面自身设计固定，矩阵只有页面 × 宽度），不照搬方案假设的轴。
+
+## headless Chrome 截图采集的环境坑
+
+- **场景**：用 `QA/GUIProbes/capture.mjs`（或任何 headless Chrome 截图脚本）对本地静态产物采集时挂起、极慢，或换机器复跑时复现。
+- **症状**：采集长时间不产出 PNG，页面加载永不完成，脚本停在等待。
+- **原因**：① headless Chrome 会继承 macOS 系统代理，对 `127.0.0.1` 的请求被代理黑洞，页面永不加载完；② 自写的极简 Node 静态服务器与 `--headless=new` 存在兼容问题（请求挂起）。
+- **做法**：Chrome 启动参数加 `--no-proxy-server`；本地静态服务用 `python3 -m http.server`（HTTP/1.0、每请求关连、带 Content-Length，单张秒级完成）；单张截图设超时保护，失败即报错不挂起。两点均已内置于 `QA/GUIProbes/capture.mjs`，换机复跑遇挂起先查代理与静态服务这两点。
+
 ## GitHub Pages 冷启动与 Actions 切换顺序
 
 - **场景**：站点仓库从零上线，或 Pages 发布方式从 "Deploy from a branch" 切到 GitHub Actions。
