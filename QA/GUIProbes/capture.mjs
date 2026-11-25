@@ -9,6 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,6 +45,9 @@ for (const appId of appIds) {
   }
 }
 
+// 每次运行独立的临时 profile：避免与本机正在运行的 Chrome 共享默认 profile 导致挂起
+const profileDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gui-probe-chrome-'));
+
 // ── 零依赖静态服务 ──
 const MIME = { '.html': 'text/html', '.css': 'text/css', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '': 'application/octet-stream' };
 const server = http.createServer((req, res) => {
@@ -64,7 +68,9 @@ for (const page of pages) {
   for (const width of WIDTHS) {
     const out = path.join(OUT, `${slug}__w${width}.png`);
     execFileSync(CHROME, [
-      '--headless=new', '--disable-gpu', '--hide-scrollbars',
+      '--headless=new', '--disable-gpu', '--hide-scrollbars', '--no-first-run',
+      `--user-data-dir=${profileDir}`,
+      '--timeout=15000',
       `--window-size=${width},900`,
       `--screenshot=${out}`,
       `http://127.0.0.1:${PORT}${page.url}`,
