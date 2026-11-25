@@ -1,15 +1,16 @@
 ---
 /**
  * 站点首页导航：logo（SVG 方块）+ 语言互切（站点首页无 nav-links，与基线一致）。
+ * 语言胶囊按登记生成：其余每种语言一颗（D3），标签为目标语言自称。
  */
 import LangPill from './LangPill.astro';
-import { otherLocale, type Locale } from '../lib/i18n';
+import { otherLocales } from '../i18n';
 
 interface Props {
-  locale: Locale;
+  locale: string;
 }
 const { locale } = Astro.props;
-const other = otherLocale(locale);
+const others = otherLocales(locale);
 ---
 
 <header class="site-nav">
@@ -20,6 +21,6 @@ const other = otherLocale(locale);
     <span>Hapaul Apps</span>
   </a>
   <div class="nav-right">
-    <LangPill href={`/${other}/`} locale={other} label={locale === 'zh-CN' ? 'English' : '中文'} />
+    {others.map((entry) => <LangPill href={`/${entry.code}/`} locale={entry.code} label={entry.nativeLabel} />)}
   </div>
 </header>

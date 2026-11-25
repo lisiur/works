@@ -1,0 +1,88 @@
+---
+/**
+ * FlashNote 首页模板（页面单份化，ISSUE-129 T5）：按语言登记生成全部语言，
+ * 文案取自 src/i18n/copy/apps/flashnote.ts；功能卡 SVG 为语言中性，数量与文案条数断言一致。
+ */
+import FlashNoteLayout from '../../../layouts/FlashNoteLayout.astro';
+import { abs, appCopyOf, esc, localeEntries } from '../../../i18n';
+import type { FlashNoteCopy } from '../../../i18n';
+
+export function getStaticPaths() {
+  return localeEntries.map((entry) => ({ params: { locale: entry.code }, props: { locale: entry.code } }));
+}
+
+const { locale } = Astro.props;
+const copy = appCopyOf('flashnote')[locale] as FlashNoteCopy;
+
+/** 功能卡图标（语言中性，与基线逐条对应） */
+const featureIcons = [
+  'M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z',
+  'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z',
+  'M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z',
+  'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z',
+  'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h2v7H7zm4-3h2v10h-2zm4 6h2v4h-2z',
+  'M22 18V3H2v15H0v2h24v-2h-2zm-8 0h-4v-1h4v1zm6-3H4V5h16v10z',
+];
+if (featureIcons.length !== copy.home.features.length) {
+  throw new Error(`[i18n] 功能卡图标数（${featureIcons.length}）与文案条数（${copy.home.features.length}）不一致`);
+}
+---
+
+<FlashNoteLayout
+  locale={locale}
+  page="index"
+  title={copy.home.title}
+  canonical={abs(`/${locale}/flashnote/`)}
+  alternates={localeEntries.map((entry) => ({ hreflang: entry.hreflang, href: abs(`/${entry.code}/flashnote/`) }))}
+>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-icon">
+      <img src="/flashnote/images/icon.png" alt="FlashNote" class="logo-hero-icon" style="width:96px;height:96px;border-radius:inherit">
+    </div>
+    <h1>{copy.home.heroH1}</h1>
+    <p class="tagline">{copy.home.heroTagline}</p>
+    <div class="hero-badges">
+      {copy.home.badges.map((badge) => (
+        <a class="badge" href={badge.href} target="_blank" rel="noopener">
+          <img src={badge.img} alt={badge.alt} width={badge.width} height={badge.height}>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <p class="section-label">{copy.home.featuresLabel}</p>
+    <h2 class="section-title">{copy.home.featuresTitle}</h2>
+    <div class="features-grid">
+      {copy.home.features.map((feature, i) => (
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24"><path d={featureIcons[i]} /></svg>
+          </div>
+          <h3>{feature.h3}</h3>
+          <p set:html={esc(feature.p)} />
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Highlight -->
+  <section class="highlight">
+    <div class="highlight-inner">
+      <h2>{copy.home.highlightH2}</h2>
+      <p>{copy.home.highlightP}</p>
+      <div class="highlight-visual"><img src={copy.home.highlightImg} alt="FlashNote"></div>
+    </div>
+  </section>
+
+  <!-- Privacy note -->
+  <section class="privacy-note">
+    <div class="privacy-note-inner">
+      <h2>{copy.home.privacyNoteH2}</h2>
+      <p>{copy.home.privacyNoteP}</p>
+      <a href={copy.home.privacyNoteHref}>{copy.home.privacyNoteLabel}</a>
+    </div>
+  </section>
+</FlashNoteLayout>

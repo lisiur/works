@@ -1,0 +1,13 @@
+---
+/** 站点首页模板：按语言登记生成全部语言的首页（页面单份化，ISSUE-129 T5）。 */
+import SiteHomeLayout from '../../layouts/SiteHomeLayout.astro';
+import { localeEntries } from '../../i18n';
+
+export function getStaticPaths() {
+  return localeEntries.map((entry) => ({ params: { locale: entry.code }, props: { locale: entry.code } }));
+}
+
+const { locale } = Astro.props;
+---
+
+<SiteHomeLayout locale={locale} />

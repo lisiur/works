@@ -1,21 +1,26 @@
 # 子路径应用集成纪律
 
-本站由 Astro 构建，地址结构为 **locale 前置全局路径**：每个语言一棵子树（`/zh-CN/`、`/en-US/`），应用是语言子树下的一段（`/zh-CN/flashnote/`、`/en-US/flashnote/…`）；应用根 `/<app>/` 是语言探测跳转页，探测后落 `/{语言}/{app}/`。站点层（首页卡片、页脚链接、应用跳转页、返回主站入口）由应用清单数据（`src/data/apps.ts`）与共享布局自动生成。接入新应用、或把现成官网整站迁入语言子树时，适用以下稳定做法。
-（ISSUE-124 起本篇按 Astro 构建体系改写：相对路径纪律解除、快照迁移校验失效删除、接入流程改数据登记；验收反馈后地址定版为 locale 前置。）
+本站由 Astro 构建，地址结构为 **locale 前置全局路径**：每个语言一棵子树（`/zh-CN/`、`/en-US/`），应用是语言子树下的一段（`/zh-CN/flashnote/`、`/en-US/flashnote/…`）；应用根 `/<app>/` 是语言探测跳转页，探测后落 `/{语言}/{app}/`。站点遵循「页面单份 + 文案字典 + 语言登记」（ISSUE-129）：语言列表只在 `src/i18n/locales.json` 一处声明，页面结构只写一份（内容模板 `src/pages/[locale]/<app>/`），按语言的文案全部进 `src/i18n/copy/`（站点层 `site.ts` + 各应用 `apps/<appId>.ts`）；站点层（首页卡片、页脚链接、应用跳转页、返回主站入口、语言胶囊）由数据与共享布局自动生成。接入新应用、加一种语言、或把现成官网整站迁入语言子树时，适用以下稳定做法。
+（ISSUE-124 起本篇按 Astro 构建体系改写；验收反馈后地址定版为 locale 前置。ISSUE-129 起页面单份化，成对语言页面与写死两种语言的分支清除，语言与文案全部由登记和文案数据驱动。）
 
 ## 根绝对路径与地址形态纪律
 
 - **场景**：页面迁为 Astro 路由后，判断站内链接写法是否正确、改动是否部署安全。
 - **症状**（违反时）：链接落到错误路径（404 或落错语言 / 层级）；产物级自测 sweep 报断链。
-- **做法**：站内链接一律**根绝对路径**；语言子树在前——index 页一律目录形态（`/zh-CN/`、`/zh-CN/flashnote/`），内容页保留 `.html` 形态（`/zh-CN/flashnote/privacy.html`）；带锚点的 index 目标写目录形态 + fragment（`/zh-CN/flashnote/#features`）；应用自有静态资源在应用段下（`/flashnote/images/…`），不随内容页进语言子树；外链（应用商店、mailto）原样写。「全相对路径」旧纪律已随 ISSUE-124 重构有意解除，改用产物级地址清单 + 断链 sweep 验收。
+- **做法**：站内链接一律**根绝对路径**；语言子树在前——index 页一律目录形态（`/zh-CN/`、`/zh-CN/flashnote/`），内容页保留 `.html` 形态（`/zh-CN/flashnote/privacy.html`）；带锚点的 index 目标写目录形态 + fragment（`/zh-CN/flashnote/#features`）；应用自有静态资源在应用段下（`/flashnote/images/…`），不随内容页进语言子树，按语言的素材路径写在应用文案数据里；外链（应用商店、mailto）原样写。「全相对路径」旧纪律已随 ISSUE-124 重构有意解除，改用产物级地址清单 + 断链 sweep 验收。
 - **交付自检**：`pnpm verify` 的 sweep 对产物全部 href/src 做 resolve → 剥 `#fragment` 后按字面路径逐一请求（目录形态与 `.html` 形态在本地静态服务和 GitHub Pages 上均直接可达），断链数 0。
 
 ## 语言跳转页与偏好记忆
 
 - **场景**：站点根与应用根不直接呈现内容，按访问者语言落地语言子树；用户手动切换过语言后，期望回访不被探测弹回。
-- **做法**：跳转页判定顺序 = localStorage 记忆 > 浏览器语言（`navigator.languages` 任一项 `zh` 开头 → `zh-CN`，否则 `en-US`）；脚本内联在 `<head>`（组件 `LangRedirectScript.astro`，`is:inline` 原样透传，两个跳转页共用同一段判定逻辑，落地段由 `HAPUAL_JUMP_PATH` 参数化：站点根落 `/<语言>/`，应用根落 `/<语言>/<app>/`），命中后 `location.replace`，禁 JS 时页面呈现两个手动入口链接兜底。语言记忆是**站点级一份**（同 origin 天然共用，站点根与应用根共享）：写入只发生在语言互切链接的 `onclick`（try/catch 静默失败），key `hapaul-lang`，合法值 `zh-CN` / `en-US`；读取只发生在跳转页。内容页之间互切不做探测——用户明确选择优先，无弹回循环。改版下线的旧地址不留任何兼容页，自然 404。
+- **做法**：跳转页判定顺序 = localStorage 记忆（合法值 = 登记语言集）> 浏览器语言（逐候选按登记规则表匹配，登记序即优先序，全不命中落回退语言）；脚本由 `LangRedirectScript.astro` 从语言登记**生成**（`is:inline` 原样透传，所有跳转页共用同一段判定逻辑、逐字节一致，落地段由 `HAPUAL_JUMP_PATH` 参数化：站点根落 `/<语言>/`，应用根落 `/<语言>/<app>/`），命中后 `location.replace`，禁 JS 时页面呈现全部登记语言的手动入口（由登记生成，标签为该语言自称）兜底。语言记忆是**站点级一份**（同 origin 天然共用，站点根与应用根共享）：写入只发生在语言互切链接的 `onclick`（try/catch 静默失败），key `hapaul-lang`，合法值 = 登记语言 `code` 集；读取只发生在跳转页。内容页之间互切不做探测——用户明确选择优先，无弹回循环。改版下线的旧地址不留任何兼容页，自然 404。
 
 ## 新应用接入流程
 
 - **场景**：接入一个新应用的 Homepage。
-- **做法**：照仓库根接入文档 `ADDING-AN-APP.md`——在 `src/data/apps.ts` 登记一条应用数据、放图标（`public/assets/icons/`）、写该应用自己的内容页（语言子树下 `src/pages/<语言>/<app>/`，复用共享 `AppLayout.astro`）。站点层全部自动生成：双语首页卡片、页脚链接、应用跳转页、返回主站入口（`AppLayout` 统一置入 nav + footer 首位），全程不改站点层文件；完成后同步更新 `scripts/verify-links.mjs` 期望清单，`pnpm verify` + `pnpm preview` 自检。
+- **做法**：照仓库根接入文档 `ADDING-AN-APP.md`——在 `src/data/apps.ts` 登记一条应用数据（语言中性字段）、在 `src/i18n/copy/apps/<appId>.ts` 为每种登记语言补一份应用文案、放图标（`public/assets/icons/`）、写**一份**内容页模板（`src/pages/[locale]/<app>/`，按语言登记生成全部语言，复用共享 `AppLayout.astro`）。站点层全部自动生成：各语言首页卡片、页脚链接、应用跳转页、返回主站入口（`AppLayout` 统一置入 nav + footer 首位）、语言胶囊；`pnpm verify` 期望清单自动推导，完成后直接自检，**无需同步任何自测脚本或站点层文件**。
+
+## 加一种语言流程
+
+- **场景**：站点接入一种新语言（扩展多语言）。
+- **做法**：只加数据——① `src/i18n/locales.json` 登记语言（code / htmlLang / hreflang / nativeLabel / match 浏览器匹配规则；fallback 恰好一个）；② `src/i18n/copy/site.ts` 补站点层文案；③ 每个 `src/i18n/copy/apps/<appId>.ts` 补应用文案。不改任何页面、布局、组件、自测脚本。文案不齐时构建闸门失败并逐条指明缺失条目与语言（AC11 口径）；补齐后产物、跳转页手动入口、语言胶囊、自测用例全部自动出现。三种及以上语言时胶囊视觉样式另行设计。

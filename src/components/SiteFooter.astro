@@ -1,12 +1,11 @@
 ---
 /**
- * 站点首页页脚：应用链接清单（由应用清单数据驱动）+ 版权行，与基线一致（无 onclick）。
+ * 站点首页页脚：应用链接清单（由应用清单与应用文案数据驱动）+ 版权行，与基线一致（无 onclick）。
  */
-import { apps, localeInfo } from '../data/apps';
-import { type Locale } from '../lib/i18n';
+import { apps, appCopyOf } from '../i18n';
 
 interface Props {
-  locale: Locale;
+  locale: string;
   copyright: string;
 }
 const { locale, copyright } = Astro.props;
@@ -14,7 +13,7 @@ const { locale, copyright } = Astro.props;
 
 <footer class="site-footer">
   <div class="footer-links">
-    {apps.map((app) => <a href={`/${app.id}/`}>{localeInfo(app, locale).name}</a>)}
+    {apps.map((app) => <a href={`/${app.id}/`}>{(appCopyOf(app.id)[locale] as { name: string }).name}</a>)}
   </div>
   <p>{copyright}</p>
 </footer>

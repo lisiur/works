@@ -1,14 +1,13 @@
 ---
 import LangJumpLayout from '../layouts/LangJumpLayout.astro';
-import { abs } from '../lib/i18n';
+import { abs, localeEntries } from '../i18n';
 ---
 
 <LangJumpLayout
   title="Hapaul Apps"
   description="Hapaul Apps — Lisiur Day 打造的原创应用 · Original apps by Lisiur Day."
   alternates={[
-    { hreflang: 'zh-Hans', href: abs('/zh-CN/') },
-    { hreflang: 'en-US', href: abs('/en-US/') },
+    ...localeEntries.map((entry) => ({ hreflang: entry.hreflang, href: abs(`/${entry.code}/`) })),
     { hreflang: 'x-default', href: abs('/') },
   ]}
 />

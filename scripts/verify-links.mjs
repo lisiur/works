@@ -1,17 +1,64 @@
 /**
- * 产物级全量自测（ISSUE-124 T6，迁移自 .opencode/test-links.py 口径）：
+ * 产物级全量自测（ISSUE-124 T6 建立，ISSUE-129 T6 推导化）：
  * 对 dist/ 起零依赖静态服务（目录索引 + 404 语义），爬全部页面 href/src，
  * resolve + 剥 #fragment 后逐一请求，断言断链数 0；
  * 同时断言 AC1：恰好 10 个 HTML、12 种地址 200、旧地址 404。
+ * 期望清单（HTML 集合、地址清单、sweep 页面集）由语言登记（src/i18n/locales.json）
+ * + 应用文案模块文件名（src/i18n/copy/apps/）+ 页面模板（src/pages/[locale]/<app>/）
+ * 推导，接语言 / 接应用不再需要同步本脚本；唯一手写项是历史下线地址 `gone`。
  */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SRC = path.join(ROOT, 'src');
+const DIST = path.join(ROOT, 'dist');
 const PORT = 4173;
 const BASE = `http://127.0.0.1:${PORT}/`;
+
+// ── 期望清单推导 ──
+const registry = JSON.parse(fs.readFileSync(path.join(SRC, 'i18n', 'locales.json'), 'utf8'));
+const locales = registry.map((entry) => entry.code);
+const appIds = fs
+  .readdirSync(path.join(SRC, 'i18n', 'copy', 'apps'))
+  .filter((f) => f.endsWith('.ts'))
+  .map((f) => f.replace(/\.ts$/, ''))
+  .sort();
+
+/** 应用页面模板清单：src/pages/[locale]/<app>/*.astro */
+function appTemplates(appId) {
+  return fs
+    .readdirSync(path.join(SRC, 'pages', '[locale]', appId))
+    .filter((f) => f.endsWith('.astro'))
+    .map((f) => f.replace(/\.astro$/, ''));
+}
+
+/** 期望 HTML 路径集合 + 每个文件的规范地址（build.format: 'preserve'——index 页目录形态，其余 .html 形态） */
+const expectedPages = []; // { html, url }
+expectedPages.push({ html: 'index.html', url: '/' });
+for (const locale of locales) expectedPages.push({ html: `${locale}/index.html`, url: `/${locale}/` });
+for (const appId of appIds) expectedPages.push({ html: `${appId}/index.html`, url: `/${appId}/` });
+for (const appId of appIds) {
+  for (const page of appTemplates(appId)) {
+    for (const locale of locales) {
+      if (page === 'index') {
+        expectedPages.push({ html: `${locale}/${appId}/index.html`, url: `/${locale}/${appId}/` });
+      } else {
+        expectedPages.push({ html: `${locale}/${appId}/${page}.html`, url: `/${locale}/${appId}/${page}.html` });
+      }
+    }
+  }
+}
+
+/** 期望 200 的地址清单：全部页面规范地址 + index 页附加的 .html 直写形态 */
+const addresses = expectedPages.map((p) => p.url);
+for (const p of expectedPages) {
+  if (p.html.endsWith('/index.html') && p.html !== 'index.html') {
+    addresses.push(`/${p.html}`);
+  }
+}
 
 const failures = [];
 
@@ -62,7 +109,7 @@ function fetch(pathname) {
   });
 }
 
-// ── AC1: 产物恰好 10 个 HTML ──
+// ── AC1: 产物 HTML 集合与推导清单一致 ──
 function listHtml(dir) {
   const out = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -78,28 +125,15 @@ await serverReady;
 
 try {
   const htmlFiles = listHtml(DIST).sort();
-  check(`AC1: dist 恰好 10 个 HTML（实际 ${htmlFiles.length}）`, htmlFiles.length === 10, htmlFiles.join(', '));
+  check(`AC1: dist 恰好 ${expectedPages.length} 个 HTML（实际 ${htmlFiles.length}）`, htmlFiles.length === expectedPages.length, htmlFiles.join(', '));
 
-  const expected = new Set([
-    'index.html',
-    'zh-CN/index.html',
-    'en-US/index.html',
-    'flashnote/index.html',
-    'zh-CN/flashnote/index.html',
-    'zh-CN/flashnote/privacy.html',
-    'zh-CN/flashnote/support.html',
-    'en-US/flashnote/index.html',
-    'en-US/flashnote/privacy.html',
-    'en-US/flashnote/support.html',
-  ]);
-  check('AC1: HTML 路径与 10 个页面一一对应', htmlFiles.every((f) => expected.has(f)) && htmlFiles.length === expected.size);
+  const expectedSet = new Set(expectedPages.map((p) => p.html));
+  check(
+    'AC1: HTML 路径与页面清单（登记推导）一一对应',
+    htmlFiles.every((f) => expectedSet.has(f)) && htmlFiles.length === expectedSet.size,
+  );
 
-  // ── AC1: 12 种地址全部 200（locale 前置全局路径，ISSUE-124 验收反馈定版）──
-  const addresses = [
-    '/', '/zh-CN/', '/en-US/', '/flashnote/',
-    '/zh-CN/flashnote/', '/zh-CN/flashnote/index.html', '/zh-CN/flashnote/privacy.html', '/zh-CN/flashnote/support.html',
-    '/en-US/flashnote/', '/en-US/flashnote/index.html', '/en-US/flashnote/privacy.html', '/en-US/flashnote/support.html',
-  ];
+  // ── AC1: 全部页面地址 200（locale 前置全局路径）──
   for (const addr of addresses) {
     try {
       const res = await fetch(addr);
@@ -126,38 +160,26 @@ try {
     }
   }
 
-  // ── AC6: 全量资源 sweep（剥 fragment、跳过外链）──
-  const pages = [
-    ['/', 'index.html'],
-    ['/zh-CN/', 'zh-CN/index.html'],
-    ['/en-US/', 'en-US/index.html'],
-    ['/flashnote/', 'flashnote/index.html'],
-    ['/zh-CN/flashnote/', 'zh-CN/flashnote/index.html'],
-    ['/zh-CN/flashnote/privacy.html', 'zh-CN/flashnote/privacy.html'],
-    ['/zh-CN/flashnote/support.html', 'zh-CN/flashnote/support.html'],
-    ['/en-US/flashnote/', 'en-US/flashnote/index.html'],
-    ['/en-US/flashnote/privacy.html', 'en-US/flashnote/privacy.html'],
-    ['/en-US/flashnote/support.html', 'en-US/flashnote/support.html'],
-  ];
+  // ── AC6: 全量资源 sweep（剥 fragment、跳过外链；页面集 = 全部期望页面）──
   const ATTR = /(?:href|src)="([^"]+)"/g;
   const SKIP = ['http://', 'https://', 'mailto:', '#'];
   const broken = [];
   const checked = new Set();
-  for (const [url, file] of pages) {
-    const body = fs.readFileSync(path.join(DIST, file), 'utf8');
+  for (const page of expectedPages) {
+    const body = fs.readFileSync(path.join(DIST, page.html), 'utf8');
     for (const raw of body.matchAll(ATTR)) {
       const ref = raw[1];
       if (SKIP.some((p) => ref.startsWith(p))) continue;
-      const resolved = new URL(ref, new URL(url, BASE));
+      const resolved = new URL(ref, new URL(page.url, BASE));
       resolved.hash = '';
       const target = resolved.pathname + resolved.search;
       if (checked.has(target)) continue;
       checked.add(target);
       try {
         const res = await fetch(target);
-        if (res.status !== 200) broken.push(`${ref} (on ${url}) → ${res.status}`);
+        if (res.status !== 200) broken.push(`${ref} (on ${page.url}) → ${res.status}`);
       } catch (e) {
-        broken.push(`${ref} (on ${url}) → ${String(e)}`);
+        broken.push(`${ref} (on ${page.url}) → ${String(e)}`);
       }
     }
   }

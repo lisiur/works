@@ -4,14 +4,14 @@
  * 语言探测只发生在应用跳转页，内容页不含任何 <script>；
  * nav-links 与 footer-links 第一项由 AppLayout 统一置入「返回主站入口」（ISSUE-122 强制条款由布局保证）；
  * 语言互切写 hapaul-lang，index 页落目录形态、其余页落 <page>.html。
- * 内容页地址为 locale 前置全局路径：/<语言>/<app>/…（ISSUE-124 验收反馈定版）；
+ * 语言胶囊按登记生成：其余每种语言一颗（D3），标签为目标语言自称。
+ * 内容页地址为 locale 前置全局路径：/<语言>/<app>/…；
  * 应用自有静态资源仍在 /<app>/images|screenshots/** 不动。
  */
 import HeadMeta from '../components/HeadMeta.astro';
 import LangPill from '../components/LangPill.astro';
 import AllAppsLink from '../components/AllAppsLink.astro';
-import { localeInfo, type AppEntry } from '../data/apps';
-import { htmlLang, otherLocale, type AlternateLink, type Locale } from '../lib/i18n';
+import { appCopyOf, localeEntryOf, otherLocales, type AppEntry, type AlternateLink } from '../i18n';
 
 export interface NavLink {
   href: string;
@@ -20,7 +20,7 @@ export interface NavLink {
 
 interface Props {
   app: AppEntry;
-  locale: Locale;
+  locale: string;
   /** 'index' → 语言互切用目录形态；其余为 <page>.html（与基线解析结果一致） */
   page: string;
   title: string;
@@ -37,15 +37,17 @@ interface Props {
   copyright: string;
 }
 const { app, locale, page, title, description, canonical, alternates, bodyClass, faviconHref, navLinks = [], footerLinks = [], copyright } = Astro.props;
-const other = otherLocale(locale);
-const info = localeInfo(app, locale);
+const entry = localeEntryOf(locale);
+const info = appCopyOf(app.id)[locale] as { shortName: string };
+const others = otherLocales(locale);
 const appIndexHref = `/${locale}/${app.id}/`;
-const langSwitchHref = page === 'index' ? `/${other}/${app.id}/` : `/${other}/${app.id}/${page}.html`;
-const pillLabel = locale === 'zh-CN' ? 'English' : '中文';
+/** 目标语言互切地址：index 页目录形态、其余页 <page>.html（DM 链接归一规则） */
+const langSwitchHref = (target: string) =>
+  page === 'index' ? `/${target}/${app.id}/` : `/${target}/${app.id}/${page}.html`;
 ---
 
 <!DOCTYPE html>
-<html lang={htmlLang[locale]}>
+<html lang={entry.htmlLang}>
 <head>
   <HeadMeta title={title} description={description} canonical={canonical} alternates={alternates} />
   {faviconHref && <link rel="icon" type="image/png" href={faviconHref}>}
@@ -65,7 +67,7 @@ const pillLabel = locale === 'zh-CN' ? 'English' : '中文';
         <AllAppsLink locale={locale} />
         {navLinks.map((link) => <a href={link.href}>{link.label}</a>)}
       </nav>
-      <LangPill href={langSwitchHref} locale={other} label={pillLabel} />
+      {others.map((target) => <LangPill href={langSwitchHref(target.code)} locale={target.code} label={target.nativeLabel} />)}
     </div>
   </header>
 

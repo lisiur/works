@@ -4,14 +4,14 @@
  * 用于应用内容页 nav-links 与 footer-links 的**第一项**，落主站对应语言首页并写入 hapaul-lang。
  * 由 AppLayout 统一置入，页面不需要（也不能）单独手写。
  */
-import { type Locale } from '../lib/i18n';
+import { siteCopyOf } from '../i18n';
 
 interface Props {
   /** 当前页面语言（入口落同语言主站首页并写入同语言偏好） */
-  locale: Locale;
+  locale: string;
 }
 const { locale } = Astro.props;
-const label = locale === 'zh-CN' ? '全部应用' : 'All Apps';
+const label = siteCopyOf(locale).allApps;
 ---
 
 <a href={`/${locale}/`} onclick={`try{localStorage.setItem('hapaul-lang','${locale}')}catch(e){}`}>{label}</a>

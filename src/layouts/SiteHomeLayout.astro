@@ -1,60 +1,56 @@
 ---
 /**
- * 站点首页骨架：卡片与页脚链接由应用清单数据驱动（AC11——加应用不改本文件），
- * hero / 分区文案作为 props 留在两个首页页面文件内（DM 方案接口契约）。
+ * 站点首页骨架：文案取自站点层文案数据，卡片与页脚链接由应用清单驱动（加应用/加语言不改本文件）。
+ * hreflang 列表由语言登记生成（登记序）。
  */
 import HeadMeta from '../components/HeadMeta.astro';
 import SiteNav from '../components/SiteNav.astro';
 import AppCard from '../components/AppCard.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import { apps } from '../data/apps';
-import { abs, htmlLang, otherLocale, type AlternateLink, type Locale } from '../lib/i18n';
+import { abs, localeEntries, localeEntryOf, siteCopyOf, type AlternateLink } from '../i18n';
 import '../styles/site.css';
 
 interface Props {
-  locale: Locale;
-  title: string;
-  heroTagline: string;
-  sectionLabel: string;
-  sectionTitle: string;
-  moreNote: string;
-  copyright: string;
+  locale: string;
 }
-const props = Astro.props;
-const canonical = abs(`/${props.locale}/`);
-const alternates: AlternateLink[] = [
-  { hreflang: 'zh-Hans', href: abs('/zh-CN/') },
-  { hreflang: 'en-US', href: abs('/en-US/') },
-];
+const { locale } = Astro.props;
+const entry = localeEntryOf(locale);
+const copy = siteCopyOf(locale);
+const canonical = abs(`/${locale}/`);
+const alternates: AlternateLink[] = localeEntries.map((alt) => ({
+  hreflang: alt.hreflang,
+  href: abs(`/${alt.code}/`),
+}));
 ---
 
 <!DOCTYPE html>
-<html lang={htmlLang[props.locale]}>
+<html lang={entry.htmlLang}>
 <head>
-  <HeadMeta title={props.title} canonical={canonical} alternates={alternates} />
+  <HeadMeta title={copy.home.title} canonical={canonical} alternates={alternates} />
 </head>
 <body>
-  <SiteNav locale={props.locale} />
+  <SiteNav locale={locale} />
 
   <main>
     <!-- Hero -->
     <section class="hero">
       <h1>Hapaul Apps</h1>
-      <p class="tagline">{props.heroTagline}</p>
+      <p class="tagline">{copy.home.heroTagline}</p>
     </section>
 
     <!-- Apps -->
     <section class="apps" id="apps">
-      <p class="section-label">{props.sectionLabel}</p>
-      <h2 class="section-title">{props.sectionTitle}</h2>
+      <p class="section-label">{copy.home.sectionLabel}</p>
+      <h2 class="section-title">{copy.home.sectionTitle}</h2>
       <div class="apps-grid">
-        {apps.map((app) => <AppCard app={app} locale={props.locale} />)}
+        {apps.map((app) => <AppCard app={app} locale={locale} />)}
       </div>
-      <p class="more-note">{props.moreNote}</p>
+      <p class="more-note">{copy.home.moreNote}</p>
     </section>
   </main>
 
   <!-- Footer -->
-  <SiteFooter locale={props.locale} copyright={props.copyright} />
+  <SiteFooter locale={locale} copyright={copy.home.copyright} />
 </body>
 </html>

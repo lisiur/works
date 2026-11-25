@@ -1,0 +1,33 @@
+---
+/**
+ * FlashNote 支持页模板（页面单份化，ISSUE-129 T5）：按语言登记生成全部语言，
+ * 文案取自 src/i18n/copy/apps/flashnote.ts 的 support 文案；图标 / SVG / 邮箱语言中性留模板。
+ */
+import FlashNoteLayout from '../../../layouts/FlashNoteLayout.astro';
+import { appCopyOf, localeEntries } from '../../../i18n';
+import type { FlashNoteCopy } from '../../../i18n';
+
+export function getStaticPaths() {
+  return localeEntries.map((entry) => ({ params: { locale: entry.code }, props: { locale: entry.code } }));
+}
+
+const { locale } = Astro.props;
+const copy = appCopyOf('flashnote')[locale] as FlashNoteCopy;
+---
+
+<FlashNoteLayout locale={locale} page="support" title={copy.support.title} bodyClass="light-bg">
+  <section class="simple-page">
+    <div class="simple-card">
+      <div class="simple-logo">
+        <img src="/flashnote/images/icon.png" alt="FlashNote" class="logo-simple-logo" style="width:80px;height:80px;border-radius:inherit">
+      </div>
+      <h1>{copy.support.h1}</h1>
+      <p class="subtitle">{copy.support.subtitle}</p>
+      <p>{copy.support.intro}</p>
+      <a class="email-btn" href="mailto:lisiurday@gmail.com">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        lisiurday@gmail.com
+      </a>
+    </div>
+  </section>
+</FlashNoteLayout>

@@ -1,32 +1,64 @@
 ---
 /**
- * 语言探测跳转脚本（AC2/AC3）。
+ * 语言探测跳转脚本（AC2/AC3）：由语言登记（src/i18n/locales.json）生成，不写死语言。
  * 站点根与应用根两个跳转页渲染同一组件：探测逻辑只写一份、逐字节一致；
- * 仅落地段随页面而异 —— segment='' 落 /<语言>/，segment='/flashnote' 落 /<语言>/flashnote/
- * （locale 前置全局路径，ISSUE-124 验收反馈定版）。
+ * 仅落地段随页面而异 —— segment='' 落 /<语言>/，segment='/flashnote' 落 /<语言>/flashnote/。
  * is:inline + set:html 原样透传：不被构建处理、保持 <head> 内同步内联、首帧前 location.replace。
- * 判定顺序（必须保持的现状行为）：localStorage 记忆 > navigator.languages 任一项 zh 开头 > 其余 en-US；
- * languages 为空/缺省回退 navigator.language；localStorage 不可用静默走浏览器语言。
+ * 判定顺序（必须保持的现状行为）：localStorage 记忆（合法值 = 登记语言集）>
+ * 逐候选（浏览器偏好序）逐规则（登记序）> 回退语言；languages 为空/缺省回退 navigator.language；
+ * localStorage 不可用静默走浏览器语言。
+ * 生成形态：单规则时与基线逐字节一致（扁平 if）；多规则时生成规则表双循环，语义不变。
  */
+import { localeEntries, fallbackLocale } from '../i18n';
+
 interface Props {
   /** 落地应用段：站点根 ''，应用 '/<app id>' */
   segment?: string;
 }
 const { segment = '' } = Astro.props;
+
+const codes = localeEntries.map((entry) => entry.code);
+const rules = localeEntries
+  .filter((entry) => entry.match)
+  .map((entry) => ({ source: entry.match!.source, flags: entry.match!.flags ?? '', code: entry.code }));
+const fallback = fallbackLocale().code;
+
+// localStorage 记忆合法性：saved === '<code1>' || saved === '<code2>' …（登记序）
+const memoryCheck = `if (${codes.map((code) => `saved === '${code}'`).join(' || ')}) lang = saved;`;
+
+// 规则表：单规则生成与基线一致的扁平形态；多规则生成双循环（候选序 → 登记序）
+let ruleLoop: string;
+if (rules.length === 1) {
+  const { source, flags, code } = rules[0];
+  ruleLoop = `    for (var i = 0; i < candidates.length; i++) {
+      if (/${source.replace(/\//g, '\\/')}/${flags}.test(candidates[i] || '')) { lang = '${code}'; break; }
+    }`;
+} else if (rules.length > 1) {
+  const table = JSON.stringify(rules);
+  ruleLoop = `    var rules = ${table}.map(function (r) { return { re: new RegExp(r.source, r.flags), code: r.code }; });
+    for (var i = 0; i < candidates.length; i++) {
+      var value = candidates[i] || '';
+      for (var j = 0; j < rules.length; j++) {
+        if (rules[j].re.test(value)) { lang = rules[j].code; break; }
+      }
+      if (lang) break;
+    }`;
+} else {
+  ruleLoop = `    // 登记中无浏览器匹配规则，仅按记忆与回退语言落地`;
+}
+
 const script = `var HAPUAL_JUMP_PATH = '${segment}';
 (function () {
   var lang = null;
   try {
     var saved = localStorage.getItem('hapaul-lang');
-    if (saved === 'zh-CN' || saved === 'en-US') lang = saved;
+    ${memoryCheck}
   } catch (e) {}
   if (!lang) {
     var candidates = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language];
-    for (var i = 0; i < candidates.length; i++) {
-      if (/^zh/i.test(candidates[i] || '')) { lang = 'zh-CN'; break; }
-    }
+${ruleLoop}
   }
-  location.replace('/' + (lang || 'en-US') + HAPUAL_JUMP_PATH + '/');
+  location.replace('/' + (lang || '${fallback}') + HAPUAL_JUMP_PATH + '/');
 })();`;
 ---
 

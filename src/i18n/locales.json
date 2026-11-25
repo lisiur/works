@@ -1,0 +1,16 @@
+[
+  {
+    "code": "zh-CN",
+    "htmlLang": "zh-Hans",
+    "hreflang": "zh-Hans",
+    "nativeLabel": "中文",
+    "match": { "source": "^zh", "flags": "i" }
+  },
+  {
+    "code": "en-US",
+    "htmlLang": "en",
+    "hreflang": "en-US",
+    "nativeLabel": "English",
+    "fallback": true
+  }
+]
